@@ -1,11 +1,11 @@
-package stan.code.generator.core;
+package stan.code.generator.core.server;
 
-public class Request
+public class ServerRequest
 {
     private String url;
     private String type;
 
-    public Request(String u, String t)
+    public ServerRequest(String u, String t)
     {
         url = u;
         type = t;

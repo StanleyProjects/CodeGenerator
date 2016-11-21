@@ -1,13 +1,13 @@
-package stan.code.generator.core;
+package stan.code.generator.core.server;
 
 import java.util.ArrayList;
 
 public class Server
 {
     private String basePath;
-    private ArrayList<Request> requests;
+    private ArrayList<ServerRequest> requests;
 
-    public Server(String b, ArrayList<Request> r)
+    public Server(String b, ArrayList<ServerRequest> r)
     {
         basePath = b;
         requests = r;
@@ -17,7 +17,7 @@ public class Server
     {
         return basePath;
     }
-    public ArrayList<Request> getRequests()
+    public ArrayList<ServerRequest> getRequests()
     {
         return requests;
     }

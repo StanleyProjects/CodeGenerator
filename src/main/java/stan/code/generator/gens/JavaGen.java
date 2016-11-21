@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 
 import stan.code.generator.core.*;
+import stan.code.generator.core.server.*;
 
 public class JavaGen
 {

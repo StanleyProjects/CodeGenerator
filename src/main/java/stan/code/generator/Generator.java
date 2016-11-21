@@ -8,6 +8,8 @@ import json.JSONParser;
 import util.Files;
 
 import stan.code.generator.core.*;
+import stan.code.generator.core.server.*;
+import stan.code.generator.core.dao.*;
 import stan.code.generator.gens.*;
 
 public class Generator
@@ -16,6 +18,7 @@ public class Generator
     private Info info;
     private Server server;
     private ArrayList<Model> models;
+    private ArrayList<Dao> dao;
 
     public Generator(String d, String c)
     {
@@ -50,6 +53,7 @@ public class Generator
     {
         parseInfo((HashMap)((HashMap)config).get("info"));
         parseServer((HashMap)((HashMap)config).get("server"));
+        this.dao = new ArrayList<>();
         parseModels((ArrayList)((HashMap)config).get("models"));
     }
     private void parseInfo(HashMap info)
@@ -60,7 +64,7 @@ public class Generator
     }
     private void parseServer(HashMap server)
     {
-        ArrayList<Request> requests = new ArrayList<>();
+        ArrayList<ServerRequest> requests = new ArrayList<>();
         ArrayList rs = (ArrayList)server.get("requests");
         for(Object request : rs)
         {
@@ -68,9 +72,9 @@ public class Generator
         }
         this.server = new Server((String)server.get("basePath"), requests);
     }
-    private Request parseRequest(HashMap request)
+    private ServerRequest parseRequest(HashMap request)
     {
-        return new Request((String)request.get("url"),
+        return new ServerRequest((String)request.get("url"),
             (String)request.get("type"));
     }
     private void parseModels(ArrayList models)
@@ -85,12 +89,33 @@ public class Generator
                 data.add(parseItem((HashMap)item));
             }
             this.models.add(new Model((String)((HashMap)model).get("name"), data));
+            addDao((String)((HashMap)model).get("name"), (ArrayList)((HashMap)model).get("dao"));
         }
     }
     private Item parseItem(HashMap item)
     {
         return new Item((String)item.get("name"),
             (String)item.get("type"));
+    }
+    private void addDao(String model, ArrayList d)
+    {
+        ArrayList<DaoMethod> methods = new ArrayList<>();
+        for(Object method : d)
+        {
+            methods.add(parseDaoMethod((HashMap)method));
+        }
+        dao.add(new Dao(model, methods));
+    }
+    private DaoMethod parseDaoMethod(HashMap method)
+    {
+        return new DaoMethod((String)method.get("name"),
+            parseResponse((HashMap)method.get("request")),
+            parseResponse((HashMap)method.get("response")));
+    }
+    private Response parseResponse(HashMap r)
+    {
+        Response response = null;
+        return response;
     }
 
     public void generate()
