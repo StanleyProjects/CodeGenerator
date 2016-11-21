@@ -6,19 +6,28 @@ import java.util.HashMap;
 
 import stan.code.generator.core.*;
 import stan.code.generator.core.server.*;
+import stan.code.generator.core.dao.*;
 
 public class JavaGen
 {
-    static public String getFileName(String modelName)
+    public ModelGen getModelGen(Model m)
     {
-        return getClassName(modelName) + ".java";
+        return new ModelGen(m);
+    }
+    public DaoGen getDaoGen(ArrayList<Dao> d)
+    {
+        return new DaoGen(d);
     }
 
-    static public String generate(String pcg, Model model)
+    public String getFileName(String file)
     {
-        String className = getClassName(model.getName());
+        return getClassName(file) + ".java";
+    }
+
+    private ArrayList<HashMap<String, String>> getFields(ArrayList<Item> items)
+    {
         ArrayList<HashMap<String, String>> fields = new ArrayList<>();
-        for(Item item : model.getData())
+        for(Item item : items)
         {
             String type = getTypeField(item);
             if(type == null)
@@ -30,47 +39,9 @@ public class JavaGen
             field.put("type", type);
             fields.add(field);
         }
-        String code = "package "+pcg+";\n\n";
-        code += "public class " + className + "\n";
-        code += "{" + "\n";
-        for(HashMap<String, String> field : fields)
-        {
-            code += "\tprivate " + field.get("type") + " " + field.get("name") + ";\n";
-        }
-        if(fields.size() == 0)
-        {
-            code += "}";
-            return code;
-        }
-        code += "\n";
-        code += "\tpublic " + className + "(";
-        for(int i=0; i<fields.size(); i++)
-        {
-            code += fields.get(i).get("type") + " " + fields.get(i).get("name");
-            if(i+1<fields.size())
-            {
-                code += ", ";
-            }
-        }
-        code += ")\n";
-        code += "\t{" + "\n";
-        for(HashMap<String, String> field : fields)
-        {
-            code += "\t\tthis." + field.get("name") + " = " + field.get("name") + ";\n";
-        }
-        code += "\t}" + "\n";
-        code += "\n";
-        for(HashMap<String, String> field : fields)
-        {
-            code += "\tpublic " + field.get("type") + " " + getMethodName("get", field.get("name")) + "()\n";
-            code += "\t{" + "\n";
-            code += "\t\treturn " + field.get("name") + ";\n";
-            code += "\t}" + "\n";
-        }
-        code += "}";
-        return code;
+        return fields;
     }
-    static private String getTypeField(Item item)
+    private String getTypeField(Item item)
     {
         if(item.getType().equals("integer"))
         {
@@ -83,7 +54,7 @@ public class JavaGen
         return null;
     }
 
-    static public String generate(String pcg, Server server)
+    public String generate(String pcg, Server server)
     {
         String code = "package "+pcg+";\n\n";
         code += "public interface Server" + "\n";
@@ -117,23 +88,23 @@ public class JavaGen
         return code;
     }
 
-    static private String getClassName(String className)
+    private String getClassName(String className)
     {
         return toUpperCamelCase(className);
     }
 
-    static private String getMethodName(String prefix, String fieldName)
+    private String getMethodName(String prefix, String fieldName)
     {
         return prefix + toUpperCamelCase(fieldName);
     }
 
-    static private String toUpperCamelCase(String str)
+    private String toUpperCamelCase(String str)
     {
         char[] chars = str.toCharArray();
         chars[0] = Character.toUpperCase(chars[0]);
         return toCamelCase(String.valueOf(chars));
     }
-    static private String toCamelCase(String str)
+    private String toCamelCase(String str)
     {
         int sub = str.indexOf("_");
         while(sub >= 0)
@@ -149,5 +120,141 @@ public class JavaGen
             sub = str.indexOf("_");
         }
         return str;
+    }
+
+    public class ModelGen
+    {
+        private Model model;
+        private ArrayList<HashMap<String, String>> fields;
+
+        private ModelGen(Model m)
+        {
+            model = m;
+            fields = getFields(model.getData());
+        }
+
+        public String getEntityName()
+        {
+            return getClassName(model.getName());
+        }
+        public String getModelName()
+        {
+            return getClassName(model.getName()) + "Model";
+        }
+
+        public String generateInterface(String pcg)
+        {
+            String className = getModelName();
+            String code = "package "+pcg+";\n\n";
+            code += "public interface " + className + "\n";
+            code += "{" + "\n";
+            if(fields.size() == 0)
+            {
+                code += "}";
+                return code;
+            }
+            for(HashMap<String, String> field : fields)
+            {
+                code += "\t" + field.get("type") + " " + getMethodName("get", field.get("name")) + "();\n";
+            }
+            code += "}";
+            return code;
+        }
+        public String generateClass(String pcg)
+        {
+            String className = getEntityName();
+            String code = "package "+pcg+";\n\n";
+            code += "public class " + className + "\n";
+            code += "\timplements " +getModelName()+ "\n";
+            code += "{" + "\n";
+            for(HashMap<String, String> field : fields)
+            {
+                code += "\tprivate " + field.get("type") + " " + field.get("name") + ";\n";
+            }
+            if(fields.size() == 0)
+            {
+                code += "}";
+                return code;
+            }
+            code += "\n";
+            code += "\tpublic " + className + "(";
+            for(int i=0; i<fields.size(); i++)
+            {
+                code += fields.get(i).get("type") + " " + fields.get(i).get("name");
+                if(i+1<fields.size())
+                {
+                    code += ", ";
+                }
+            }
+            code += ")\n";
+            code += "\t{" + "\n";
+            for(HashMap<String, String> field : fields)
+            {
+                code += "\t\tthis." + field.get("name") + " = " + field.get("name") + ";\n";
+            }
+            code += "\t}" + "\n";
+            code += "\n";
+            for(HashMap<String, String> field : fields)
+            {
+                code += "\tpublic " + field.get("type") + " " + getMethodName("get", field.get("name")) + "()\n";
+                code += "\t{" + "\n";
+                code += "\t\treturn " + field.get("name") + ";\n";
+                code += "\t}" + "\n";
+            }
+            code += "}";
+            return code;
+        }
+    }
+
+    public class DaoGen
+    {
+        private ArrayList<Dao> dao;
+
+        private DaoGen(ArrayList<Dao> d)
+        {
+            dao = d;
+        }
+
+        public String generateModels(String pcg, ArrayList<Model> models)
+        {
+            String code = "package "+pcg+";\n\n";
+            code += "public interface Models" + "\n";
+            code += "{" + "\n";
+            for(Dao methods : dao)
+            {
+                JavaGen.ModelGen modelGen = null;
+                for(Model model : models)
+                {
+                    if(methods.getModel().equals(model.getName()))
+                    {
+                        modelGen = new ModelGen(model);
+                        break;
+                    }
+                }
+                if(modelGen == null)
+                {
+                    continue;
+                }
+                code += "\tpublic interface " +modelGen.getEntityName()+ "s\n";
+                code += "\t{" + "\n";
+                for(DaoMethod daoMethod : methods.getMethods())
+                {
+                    code += "\t\t";
+                    if(daoMethod.getResponse() == null)
+                    {
+                        code += "void";
+                    }
+                    code += " " + daoMethod.getName() + "(";
+                    if(daoMethod.getRequest() != null)
+                    {
+                        
+                    }
+                    code += ");\n";
+                }
+                code += "\t}" + "\n";
+            }
+            code += "}";
+            return code;
+        }
     }
 }

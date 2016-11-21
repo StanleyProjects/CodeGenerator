@@ -48,6 +48,14 @@ public class Generator
                 + "\nname " + model.getName()
                 + "\ndata " + model.getData());
         }
+        System.out.println(getClass().getName() + " Dao:"
+            + "\nsize " + dao.size());
+        for(Dao method : dao)
+        {
+            System.out.println(getClass().getName() + " method:"
+                + "\nmodel " + method.getModel()
+                + "\nmethods size " + method.getMethods().size());
+        }
     }
     private void parseConfig(HashMap config)
     {
@@ -120,19 +128,30 @@ public class Generator
 
     public void generate()
     {
-        String pkg = "stan";
+        String pkg = "generate";
         String modelsPackage = "models";
-        String serverPackage = "server";
+        String entitiesPackage = "entities";
+        String serverPackage = "backend";
+        String daoPackage = "dao";
         String srcPath = destination + "/src";
         String modelsPath = srcPath + "/" + pkg + "/" + modelsPackage;
+        String entitiesPath = srcPath + "/" + pkg + "/" + entitiesPackage;
         String serverPath = srcPath + "/" + pkg + "/" + serverPackage;
+        String daoPath = srcPath + "/" + pkg + "/" + daoPackage;
         new File(destination).mkdirs();
         new File(modelsPath).mkdirs();
+        new File(entitiesPath).mkdirs();
         new File(serverPath).mkdirs();
+        new File(daoPath).mkdirs();
+        JavaGen javaGen = new JavaGen();
         for(Model model : models)
         {
-            Files.writeFile(JavaGen.generate(pkg + "." + modelsPackage, model), modelsPath + "/" + JavaGen.getFileName(model.getName()));
+            JavaGen.ModelGen modelGen = javaGen.getModelGen(model);
+            Files.writeFile(modelGen.generateInterface(pkg + "." + modelsPackage), modelsPath + "/" + javaGen.getFileName(modelGen.getModelName()));
+            Files.writeFile(modelGen.generateClass(pkg + "." + entitiesPackage), entitiesPath + "/" + javaGen.getFileName(modelGen.getEntityName()));
         }
-        Files.writeFile(JavaGen.generate(pkg + "." + serverPackage, server), serverPath + "/" + JavaGen.getFileName("Server"));
+        JavaGen.DaoGen daoGen = javaGen.getDaoGen(dao);
+        Files.writeFile(daoGen.generateModels(pkg + "." + daoPackage, models), daoPath + "/" + javaGen.getFileName("Models"));
+        Files.writeFile(javaGen.generate(pkg + "." + serverPackage, server), serverPath + "/" + javaGen.getFileName("Server"));
     }
 }

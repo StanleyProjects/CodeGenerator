@@ -19,11 +19,11 @@ public class DaoMethod
     {
         return name;
     }
-    public Response getRequests()
+    public Response getRequest()
     {
         return request;
     }
-    public Response getResponses()
+    public Response getResponse()
     {
         return response;
     }
